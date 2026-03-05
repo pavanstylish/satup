@@ -1,0 +1,33 @@
+/* ============================= */
+/*          BANNER SECTION       */
+/* ============================= */
+
+.banner {
+    height: 100vh;
+
+    /* Banner Image */
+    background-image: url("../images/newbanner.jpg");
+
+    /* Image Position */
+    background-position: center center;
+
+    /* Prevent Repeat */
+    background-repeat: no-repeat;
+
+    /* Full Cover */
+    background-size: cover;
+
+    /* Center Content */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.banner h1 {
+    color: #1c0470;
+    font-size: 48px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px 30px;
+    border-radius: 5px;
+}
