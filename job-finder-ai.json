@@ -1,0 +1,113 @@
+{
+  "name": "Job Finder AI Agent (Apify Replica)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Job Search Automation",
+        "formFields": {
+          "values": [
+            { "fieldLabel": "Location", "requiredField": true },
+            { "fieldLabel": "Job Title", "requiredField": true },
+            { "fieldLabel": "Resume", "fieldType": "file", "requiredField": true }
+          ]
+        }
+      },
+      "id": "FormTrigger",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~linkedin-jobs-scraper/run-sync-get-dataset-items?token=YOUR_APIFY_TOKEN",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"title\": \"={{$json[\"Job Title\"]}}\",\n  \"location\": \"={{$json[\"Location\"]}}\",\n  \"maxItems\": 10\n}"
+      },
+      "id": "ApifyScraper",
+      "name": "Apify LinkedIn Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1
+      },
+      "id": "SplitJobs",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a professional career assistant."
+          },
+          {
+            "role": "user",
+            "content": "Candidate Resume:\n{{$binary.Resume.data}}\n\nJob Details:\nTitle: {{$json[\"title\"]}}\nCompany: {{$json[\"companyName\"]}}\nDescription: {{$json[\"description\"]}}\n\nGenerate:\n1. Clean job summary\n2. Personalized cover letter under 150 words."
+          }
+        ]
+      },
+      "id": "OpenAICoverLetter",
+      "name": "Generate Cover Letter",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 3,
+      "position": [950, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "Sheet1!A:F"
+      },
+      "id": "GoogleSheets",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1200, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [{ "node": "Apify LinkedIn Scraper", "type": "main", "index": 0 }]
+      ]
+    },
+    "Apify LinkedIn Scraper": {
+      "main": [
+        [{ "node": "Split In Batches", "type": "main", "index": 0 }]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [{ "node": "Generate Cover Letter", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Cover Letter": {
+      "main": [
+        [{ "node": "Save to Google Sheets", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false
+}
